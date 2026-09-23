@@ -6,6 +6,7 @@ import Cropper from 'react-easy-crop';
 import {
   FiArrowRight, FiPlus, FiTrash2, FiEdit3, FiCamera,
   FiUpload, FiX, FiSave, FiImage, FiSearch, FiGrid,
+  FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
 
 const DEBOUNCE_MS = 1000;
@@ -32,6 +33,27 @@ const TableDetail = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRowForImages, setSelectedRowForImages] = useState(null);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewerImages, setViewerImages] = useState([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
+  const openImageViewer = (images, index = 0) => {
+    setViewerImages(images);
+    setViewerIndex(index);
+    setShowImageViewer(true);
+  };
+
+  const handleKeyDown = useCallback((e) => {
+    if (!showImageViewer) return;
+    if (e.key === 'ArrowLeft') setViewerIndex((i) => (i + 1) % viewerImages.length);
+    if (e.key === 'ArrowRight') setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length);
+    if (e.key === 'Escape') setShowImageViewer(false);
+  }, [showImageViewer, viewerImages.length]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -312,7 +334,7 @@ const TableDetail = () => {
                         <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                           {row.images?.slice(0, 3).map((img, imgIndex) => (
                             <div key={imgIndex} className="relative group">
-                              <img src={img.url} alt="" className="w-10 h-10 object-cover rounded" />
+                              <img src={img.url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={(e) => { e.stopPropagation(); openImageViewer(row.images, imgIndex); }} />
                               <button onClick={() => handleDeleteImage(row._id, imgIndex)}
                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <FiX size={10} />
@@ -373,9 +395,9 @@ const TableDetail = () => {
                   <p className="text-sm text-gray-500 mb-3">الصور ({selectedRow.images.length})</p>
                   <div className="grid grid-cols-3 gap-3">
                     {selectedRow.images.map((img, idx) => (
-                      <div key={idx} className="relative group">
+                      <div key={idx} className="relative group cursor-pointer" onClick={() => openImageViewer(selectedRow.images, idx)}>
                         <img src={img.url} alt="" className="w-full h-32 object-cover rounded-lg" />
-                        <button onClick={() => handleDeleteImage(selectedRow._id, idx)}
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteImage(selectedRow._id, idx); }}
                           className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <FiX size={12} />
                         </button>
@@ -402,6 +424,28 @@ const TableDetail = () => {
                 إغلاق
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Viewer */}
+      {showImageViewer && viewerImages.length > 0 && (
+        <div className="fixed inset-0 bg-black z-[100] flex items-center justify-center">
+          <button onClick={() => setShowImageViewer(false)}
+            className="absolute top-4 left-4 text-white p-2 hover:bg-white/20 rounded-full z-10">
+            <FiX size={28} />
+          </button>
+          <button onClick={() => setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length)}
+            className="absolute left-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
+            <FiChevronRight size={32} />
+          </button>
+          <img src={viewerImages[viewerIndex].url} alt="" className="max-w-full max-h-full object-contain" />
+          <button onClick={() => setViewerIndex((i) => (i + 1) % viewerImages.length)}
+            className="absolute right-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
+            <FiChevronLeft size={32} />
+          </button>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white text-lg bg-black/50 px-4 py-2 rounded-full">
+            {viewerIndex + 1} / {viewerImages.length}
           </div>
         </div>
       )}
