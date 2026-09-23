@@ -36,17 +36,21 @@ const TableDetail = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [viewerImages, setViewerImages] = useState([]);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerZoom, setViewerZoom] = useState(1);
+  const [viewerOffset, setViewerOffset] = useState({ x: 0, y: 0 });
 
   const openImageViewer = (images, index = 0) => {
     setViewerImages(images);
     setViewerIndex(index);
+    setViewerZoom(1);
+    setViewerOffset({ x: 0, y: 0 });
     setShowImageViewer(true);
   };
 
   const handleKeyDown = useCallback((e) => {
     if (!showImageViewer) return;
-    if (e.key === 'ArrowLeft') setViewerIndex((i) => (i + 1) % viewerImages.length);
-    if (e.key === 'ArrowRight') setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length);
+    if (e.key === 'ArrowLeft') { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }
+    if (e.key === 'ArrowRight') { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }
     if (e.key === 'Escape') setShowImageViewer(false);
   }, [showImageViewer, viewerImages.length]);
 
@@ -430,22 +434,29 @@ const TableDetail = () => {
 
       {/* Image Viewer */}
       {showImageViewer && viewerImages.length > 0 && (
-        <div className="fixed inset-0 bg-black z-[100] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black z-[100] flex items-center justify-center"
+          onWheel={(e) => { e.preventDefault(); setViewerZoom((z) => Math.min(Math.max(z + (e.deltaY > 0 ? -0.2 : 0.2), 0.5), 5)); }}>
           <button onClick={() => setShowImageViewer(false)}
             className="absolute top-4 left-4 text-white p-2 hover:bg-white/20 rounded-full z-10">
             <FiX size={28} />
           </button>
-          <button onClick={() => setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length)}
+          <button onClick={() => { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }}
             className="absolute left-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
             <FiChevronRight size={32} />
           </button>
-          <img src={viewerImages[viewerIndex].url} alt="" className="max-w-full max-h-full object-contain" />
-          <button onClick={() => setViewerIndex((i) => (i + 1) % viewerImages.length)}
+          <img src={viewerImages[viewerIndex].url} alt=""
+            className="max-w-full max-h-full object-contain transition-transform duration-200"
+            style={{ transform: `scale(${viewerZoom}) translate(${viewerOffset.x}px, ${viewerOffset.y}px)`, cursor: viewerZoom > 1 ? 'grab' : 'zoom-in' }}
+            draggable={false} />
+          <button onClick={() => { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }}
             className="absolute right-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
             <FiChevronLeft size={32} />
           </button>
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white text-lg bg-black/50 px-4 py-2 rounded-full">
-            {viewerIndex + 1} / {viewerImages.length}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/50 px-4 py-2 rounded-full">
+            <button onClick={() => setViewerZoom((z) => Math.min(z + 0.5, 5))} className="text-white text-xl font-bold px-2">+</button>
+            <span className="text-white text-sm">{Math.round(viewerZoom * 100)}%</span>
+            <button onClick={() => setViewerZoom((z) => Math.max(z - 0.5, 0.5))} className="text-white text-xl font-bold px-2">-</button>
+            <span className="text-white text-sm ml-2">{viewerIndex + 1} / {viewerImages.length}</span>
           </div>
         </div>
       )}
