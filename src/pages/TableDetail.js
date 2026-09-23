@@ -37,20 +37,18 @@ const TableDetail = () => {
   const [viewerImages, setViewerImages] = useState([]);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [viewerZoom, setViewerZoom] = useState(1);
-  const [viewerOffset, setViewerOffset] = useState({ x: 0, y: 0 });
 
   const openImageViewer = (images, index = 0) => {
     setViewerImages(images);
     setViewerIndex(index);
     setViewerZoom(1);
-    setViewerOffset({ x: 0, y: 0 });
     setShowImageViewer(true);
   };
 
   const handleKeyDown = useCallback((e) => {
     if (!showImageViewer) return;
-    if (e.key === 'ArrowLeft') { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }
-    if (e.key === 'ArrowRight') { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }
+    if (e.key === 'ArrowLeft') { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); }
+    if (e.key === 'ArrowRight') { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); }
     if (e.key === 'Escape') setShowImageViewer(false);
   }, [showImageViewer, viewerImages.length]);
 
@@ -440,15 +438,15 @@ const TableDetail = () => {
             className="absolute top-4 left-4 text-white p-2 hover:bg-white/20 rounded-full z-10">
             <FiX size={28} />
           </button>
-          <button onClick={() => { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }}
+          <button onClick={() => { setViewerIndex((i) => (i - 1 + viewerImages.length) % viewerImages.length); setViewerZoom(1); }}
             className="absolute left-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
             <FiChevronRight size={32} />
           </button>
           <img src={viewerImages[viewerIndex].url} alt=""
             className="max-w-full max-h-full object-contain transition-transform duration-200"
-            style={{ transform: `scale(${viewerZoom}) translate(${viewerOffset.x}px, ${viewerOffset.y}px)`, cursor: viewerZoom > 1 ? 'grab' : 'zoom-in' }}
+            style={{ transform: `scale(${viewerZoom})`, cursor: 'zoom-in' }}
             draggable={false} />
-          <button onClick={() => { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); setViewerOffset({ x: 0, y: 0 }); }}
+          <button onClick={() => { setViewerIndex((i) => (i + 1) % viewerImages.length); setViewerZoom(1); }}
             className="absolute right-4 text-white p-3 hover:bg-white/20 rounded-full z-10">
             <FiChevronLeft size={32} />
           </button>
