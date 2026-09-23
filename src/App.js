@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
@@ -21,16 +21,14 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      checkAuth();
-    } else {
-      setLoading(false);
-    }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null);
+    setUser(null);
+  }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await api.get('/auth/me');
       setUser(response.data.user);
@@ -39,7 +37,16 @@ const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [logout]);
+
+  useEffect(() => {
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      checkAuth();
+    } else {
+      setLoading(false);
+    }
+  }, [token, checkAuth]);
 
   const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
@@ -49,13 +56,6 @@ const AuthProvider = ({ children }) => {
     setToken(token);
     setUser(user);
     return user;
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
-    setToken(null);
-    setUser(null);
   };
 
   if (loading) {
